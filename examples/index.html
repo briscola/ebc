@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>電力料金計算サンプル</title>
+    <link id="style" href="//cdn.datatables.net/1.10.9/css/jquery.dataTables.min.css" rel="stylesheet" media="screen">
+    <link id="style" href="//code.jquery.com/ui/1.11.4/themes/ui-lightness/jquery-ui.css" rel="stylesheet" media="screen">
+    <link id="style" href="//mottie.github.io/Keyboard/dist/css/keyboard.min.css" rel="stylesheet" media="screen">
+    <link id="style" href="//cdn.jsdelivr.net/jqplot/1.0.8/jquery.jqplot.min.css" rel="stylesheet" media="screen">
+    
+    <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+    <script src="//cdn.datatables.net/1.10.9/js/jquery.dataTables.js"></script>
+    <script src="//mottie.github.io/Keyboard/dist/js/jquery.keyboard.min.js"></script>
+    <script src="//cdn.jsdelivr.net/jqplot/1.0.8/jquery.jqplot.min.js"></script>
+    <script src="//cdn.jsdelivr.net/jqplot/1.0.8/plugins/jqplot.barRenderer.min.js"></script>
+    <script src="//cdn.jsdelivr.net/jqplot/1.0.8/plugins/jqplot.categoryAxisRenderer.min.js"></script>
+    <script src="//cdn.jsdelivr.net/jqplot/1.0.8/plugins/jqplot.canvasTextRenderer.min.js"></script>
+    <script src="//cdn.jsdelivr.net/jqplot/1.0.8/plugins/jqplot.canvasAxisTickRenderer.min.js"></script>
+    <script src="//cdn.jsdelivr.net/jqplot/1.0.8/plugins/jqplot.canvasAxisLabelRenderer.min.js"></script>
+    <script src="//cdn.jsdelivr.net/jqplot/1.0.8/plugins/jqplot.highlighter.min.js"></script>
+
+    <script src="../dist/ebc.js"></script>
+    <script src="./index.js"></script>
+  </head>
+  <body>
+    電力会社: <select id="company"></select><br>
+    標準メニューでの月額料金: <input id="num" type="text" size="6">円<br>
+    アンペア数:
+    <input type="radio" name="ampere" value="10">10A
+    <input type="radio" name="ampere" value="15">15A
+    <input type="radio" name="ampere" value="20">20A
+    <input type="radio" name="ampere" value="30">30A
+    <input type="radio" name="ampere" value="40">40A
+    <input type="radio" name="ampere" value="50" checked>50A
+    <input type="radio" name="ampere" value="60">60A
+    <input type="radio" name="ampere" value="70">70A
+    <input type="radio" name="ampere" value="80">80A
+    <input type="radio" name="ampere" value="90">90A
+    <input type="radio" name="ampere" value="100">100A
+    <br>
+    昼夜の電気使用量割合(昼7:00-23:00):
+    <input type="radio" name="dayratio" value="0.8">昼80%:夜20%
+    <input type="radio" name="dayratio" value="0.65">昼65%:夜35%
+    <input type="radio" name="dayratio" value="0.5">昼50%:夜50%
+    <input type="radio" name="dayratio" value="0.35">昼35%:夜65%
+    <input type="radio" name="dayratio" value="0.2" checked>昼20%:夜80%
+    <br><br>
+    
+    <div id="tabs">
+      <ul>
+	<li><a href="#t-1">月額料金計算結果</a></li>
+	<li><a href="#t-2">1日の電力利用量グラフ</a></li>
+      </ul>
+
+      <div id="t-1">
+	<table id="ebtable" class="display" width="100%"></table>
+      </div>
+      <div id="t-2">
+	<div id="euplot" style="height:500px;width:100%;"></div>
+      </div>
+    </div>
+    
+    <script>
+      $(document).ready(function(){
+      
+      $.jqplot.config.enablePlugins = false;
+
+      // タブの設定
+      $("#tabs").tabs();
+
+      // 料金計算用のパラメータ
+      var company = 'tepco';
+      var monthlyfee = 10000;
+      var ampere = 50;
+      var dayratio = 0.2;
+      var daystart = 7;
+      var dayend = 23;
+      
+      // 料金計算結果表とグラフの作成
+      var ebtable = cal('tepco',monthlyfee,ampere,daystart,dayend,dayratio);
+      var table = $('#ebtable').DataTable({
+      paging: false,
+      info: false,
+      filter: false,
+      order:[[ 1, "desc" ]],
+      data:ebtable,
+      columns: tableheader
+      });
+      var plotoptions = {
+      title: '1日の電力使用量(wh)',
+      seriesDefaults:{
+      renderer:$.jqplot.BarRenderer,
+      rendererOptions: {
+      barPadding: 0,
+      barMargin: 0,
+      barWidth: null
+      }
+      },
+      highlighter: {
+      show: true,
+      tooltipAxes: 'y'
+      },
+      axes: {
+      xaxis: {
+      label: '時間',
+      renderer: $.jqplot.CategoryAxisRenderer,
+      tickRenderer: $.jqplot.CanvasAxisTickRenderer,
+      tickOptions: {angle: -90},
+      ticks:[
+      '00:00','00:30',
+      '01:00','01:30',
+      '02:00','02:30',
+      '03:00','03:30',
+      '04:00','04:30',
+      '05:00','05:30',
+      '06:00','06:30',
+      '07:00','07:30',
+      '08:00','08:30',
+      '09:00','09:30',
+      '10:00','10:30',
+      '11:00','11:30',
+      '12:00','12:30',
+      '13:00','13:30',
+      '14:00','14:30',
+      '15:00','15:30',
+      '16:00','16:30',
+      '17:00','17:30',
+      '18:00','18:30',
+      '19:00','19:30',
+      '20:00','20:30',
+      '21:00','21:30',
+      '22:00','22:30',
+      '23:00','23:30'
+      ]
+      },
+      yaxis: {
+      label: '電力使用量(wh)',
+      labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
+      ticks: [ 0, 250, 500, 750, 1000 ],
+      tickOptions: {
+      mark: 'outside',
+      showMark: true,
+      showGridline: true,
+      markSize: 4,
+      show: true,
+      showLabel: true,
+      formatString: '%dWh',
+      }
+      }
+      }
+      };
+      var plot = $.jqplot('euplot',[ebc.getEU().daily[0].wh],plotoptions);
+
+      // 電力会社選択ボックスの設定
+      $.each(companies, function(value, name) {
+      $option = $('<option>').val(value).text(name);
+	$('select').append($option);
+	});
+	
+	// 電力会社を選択したら再計算
+	$('select').change(function(){
+	company = $(this).val();
+	try {
+	ebtable = cal(company,monthlyfee,ampere,daystart,dayend,dayratio);
+	} catch(e) {
+	alert(e.message);
+	}
+	table.clear().rows.add(ebtable).draw();
+	plot = $.jqplot('euplot',[ebc.getEU().daily[0].wh],plotoptions);
+	plot.replot();
+	});
+	
+	// 月額料金の入力エリアの設定
+	$('#num').val(monthlyfee);
+	$('#num').keyboard({
+	layout : 'num',
+	restrictInput : true,
+	preventPaste : true,
+	autoAccept : true
+	});
+	
+	// 月額料金を入力したら再計算
+	$('#num').change(function(){
+	monthlyfee = $(this).val();
+	try {
+	ebtable = cal(company,monthlyfee,ampere,daystart,dayend,dayratio);
+	} catch(e) {
+	alert(e.message);
+	}
+	table.clear().rows.add(ebtable).draw();
+	plot = $.jqplot('euplot',[ebc.getEU().daily[0].wh],plotoptions);
+	plot.replot();
+	});
+	
+	// アンペアを選択したら再計算
+	$('input[name="ampere"]:radio').change(function(){
+	ampere = $(this).val();
+	try {
+	ebtable = cal(company,monthlyfee,ampere,daystart,dayend,dayratio);
+	} catch(e) {
+	alert(e.message);
+	}
+	table.clear().rows.add(ebtable).draw();
+	plot = $.jqplot('euplot',[ebc.getEU().daily[0].wh],plotoptions);
+	plot.replot();
+	});
+	
+	// 昼夜の割合を選択したら再計算
+	$('input[name="dayratio"]:radio').change(function(){
+	dayratio = $(this).val();
+	try {
+	ebtable = cal(company,monthlyfee,ampere,daystart,dayend,dayratio);
+	} catch(e) {
+	alert(e.message);
+	}
+	table.clear().rows.add(ebtable).draw();
+	plot = $.jqplot('euplot',[ebc.getEU().daily[0].wh],plotoptions);
+	plot.replot();
+	});
+	
+	// タブの表示
+	$('#tabs').on('tabsactivate',function(event,ui) {
+	var index = ui.newTab.index()
+	if (index == 1 && plot._drawCount === 0) {
+	plot.replot();
+	}
+	}
+	);
+
+	// レスポンシブ対応
+	window.onresize = function(event) {
+	table.clear().rows.add(ebtable).draw();
+	plot.replot();
+	}
+      
+	});
+    </script>
+    
+  </body>
+</html>
