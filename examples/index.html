@@ -70,7 +70,7 @@
       $("#tabs").tabs();
 
       // 料金計算用のパラメータ
-      var company = 'tohoku';
+      var company = 'tepco';
       var monthlyfee = 10000;
       var ampere = 50;
       var dayratio = 0.2;
@@ -78,7 +78,7 @@
       var dayend = 23;
       
       // 料金計算結果表とグラフの作成
-      var ebtable = cal('tohoku',monthlyfee,ampere,daystart,dayend,dayratio);
+      var ebtable = cal('tepco',monthlyfee,ampere,daystart,dayend,dayratio);
       var table = $('#ebtable').DataTable({
       paging: false,
       info: false,

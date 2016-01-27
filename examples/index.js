@@ -36,7 +36,7 @@ var tableheader = [
     { title: "休日昼間量(kWh)" }**/
 ];
 
-var ebc = EBC.init("tohoku");
+var ebc = EBC.init("tepco");
 var cal = function(company,monthlyfee,ampere,daystarttime,dayendtime,daytimerate) {
     ebc = EBC.init(company);
     var eu = new EU();
